@@ -1,0 +1,225 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum TargetGender {
+  UNISEX
+  MALE
+  FEMALE
+}
+
+enum SampleType {
+  BLOOD
+  URINE
+  STOOL
+  SWAB
+  SEMEN
+  IMAGING
+  CARDIAC_WAVEFORM
+  OTHER
+}
+
+enum BookingType {
+  WALK_IN
+  HOME_COLLECTION
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  SAMPLE_COLLECTED
+  PROCESSING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  PAY_AT_CENTRE
+  ONLINE_PAYSTACK
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+enum PrescriptionStatus {
+  PENDING_REVIEW
+  PROCESSED
+  REJECTED
+}
+
+enum ResultFlag {
+  NORMAL
+  HIGH
+  LOW
+  ABNORMAL
+}
+
+model ClinicProfile {
+  id           String   @id @default(cuid())
+  name         String
+  rcNumber     String
+  address      String
+  phoneNumbers String[]
+  mission      String   @db.Text
+  vision       String   @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model TestCatalog {
+  id             String        @id @default(cuid())
+  code           String        @unique
+  name           String
+  category       String
+  price          Decimal       @db.Decimal(10, 2)
+  sampleType     SampleType    @default(BLOOD)
+  preparation    String?       @db.Text
+  turnaroundTime String
+  isPopular      Boolean       @default(false)
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  packages       PackageItem[]
+  bookingItems   BookingItem[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
+model HealthPackage {
+  id            String        @id @default(cuid())
+  slug          String        @unique
+  title         String
+  category      String
+  targetGender  TargetGender  @default(UNISEX)
+  price         Decimal       @db.Decimal(10, 2)
+  discountPrice Decimal       @db.Decimal(10, 2)
+  description   String        @db.Text
+  isPopular     Boolean       @default(false)
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  tests         PackageItem[]
+  bookingItems  BookingItem[]
+
+  @@index([category])
+  @@index([targetGender])
+}
+
+model PackageItem {
+  id            String        @id @default(cuid())
+  packageId     String
+  testCatalogId String
+  package       HealthPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  testCatalog   TestCatalog   @relation(fields: [testCatalogId], references: [id], onDelete: Cascade)
+
+  @@unique([packageId, testCatalogId])
+}
+
+model Booking {
+  id                String         @id @default(cuid())
+  bookingRef        String         @unique
+  patientName       String
+  patientEmail      String?
+  patientPhone      String
+  patientAge        Int
+  patientGender     Gender
+  bookingType       BookingType    @default(WALK_IN)
+  pickupAddress     String?        @db.Text
+  preferredDate     DateTime       @db.Date
+  preferredTimeSlot String
+  totalAmount       Decimal        @db.Decimal(10, 2)
+  paymentMethod     PaymentMethod  @default(PAY_AT_CENTRE)
+  paymentStatus     PaymentStatus  @default(PENDING)
+  paymentReference  String?
+  status            BookingStatus  @default(PENDING)
+  notes             String?        @db.Text
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  items             BookingItem[]
+  medicalReport     MedicalReport?
+
+  @@index([bookingRef])
+  @@index([patientPhone])
+  @@index([status])
+  @@index([preferredDate])
+}
+
+model BookingItem {
+  id             String         @id @default(cuid())
+  bookingId      String
+  booking        Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  testCatalogId  String?
+  testCatalog    TestCatalog?   @relation(fields: [testCatalogId], references: [id])
+  packageId      String?
+  package        HealthPackage? @relation(fields: [packageId], references: [id])
+  priceAtBooking Decimal        @db.Decimal(10, 2)
+
+  @@index([bookingId])
+}
+
+model PrescriptionUpload {
+  id           String             @id @default(cuid())
+  patientName  String
+  patientPhone String
+  fileUrl      String
+  notes        String?            @db.Text
+  status       PrescriptionStatus @default(PENDING_REVIEW)
+  reviewedBy   String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([patientPhone])
+  @@index([status])
+}
+
+model MedicalReport {
+  id              String           @id @default(cuid())
+  bookingId       String           @unique
+  booking         Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reportNumber    String           @unique
+  pathologistName String?
+  doctorNotes     String?          @db.Text
+  pdfFileUrl      String?
+  isReleased      Boolean          @default(false)
+  releasedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  results         TestResultItem[]
+
+  @@index([reportNumber])
+  @@index([isReleased])
+}
+
+model TestResultItem {
+  id              String        @id @default(cuid())
+  medicalReportId String
+  medicalReport   MedicalReport @relation(fields: [medicalReportId], references: [id], onDelete: Cascade)
+  parameterName   String
+  observedValue   String
+  standardRange   String?
+  unit            String?
+  flag            ResultFlag    @default(NORMAL)
+
+  @@index([medicalReportId])
+}
