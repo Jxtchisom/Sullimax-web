@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --canvas: #FFFFFF;
+  --surface: #F8FAFC;
+  --border: #E2E8F0;
+  --navy: #0F172A;
+  --emerald: #0D5C46;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+body {
+  background-color: var(--canvas);
+  color: var(--navy);
+  -webkit-font-smoothing: antialiased;
+}
