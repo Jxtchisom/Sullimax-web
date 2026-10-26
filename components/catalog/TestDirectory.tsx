@@ -6,9 +6,9 @@ import {
   Plus, 
   Clock, 
   AlertCircle, 
-  Info,
-  ChevronRight,
-  SearchX
+  Info, 
+  ChevronRight, 
+  SearchX 
 } from "lucide-react";
 
 export interface TestItem {
@@ -212,12 +212,11 @@ const PACKAGES = {
   ],
 };
 
-// --- UPDATED COMPONENT INTERFACE ---
 interface TestDirectoryProps {
   searchQuery?: string;
   categoryFilter?: string;
   selectedItemIds: string[];
-  onToggleItem: (id: string) => void;
+  onToggleItem: (id: string, name: string) => void;
   onProceedToBooking?: (selectedItems: TestItem[]) => void;
 }
 
@@ -232,6 +231,7 @@ export default function TestDirectory({
   const [packageGender, setPackageGender] = useState<"male" | "female">("female");
   const [scanFilter, setScanFilter] = useState<"ALL" | "FEMALE" | "MALE">("ALL");
 
+  // Sync tab with Hero search category pills
   useEffect(() => {
     if (categoryFilter === "ULTRASOUND") {
       setActiveTab("ultrasound");
@@ -247,8 +247,36 @@ export default function TestDirectory({
     }
   }, [categoryFilter]);
 
+  // Sync tab with Navbar custom event & URL hash
+  useEffect(() => {
+    const handleTabSwitch = (e: Event) => {
+      const customEvent = e as CustomEvent<"tests" | "packages" | "ultrasound">;
+      if (customEvent.detail) {
+        setActiveTab(customEvent.detail);
+      }
+    };
+
+    const checkHash = () => {
+      if (window.location.hash === "#packages") {
+        setActiveTab("packages");
+      } else if (window.location.hash === "#ultrasound") {
+        setActiveTab("ultrasound");
+      }
+    };
+
+    checkHash();
+    window.addEventListener("switch-directory-tab", handleTabSwitch);
+    window.addEventListener("hashchange", checkHash);
+
+    return () => {
+      window.removeEventListener("switch-directory-tab", handleTabSwitch);
+      window.removeEventListener("hashchange", checkHash);
+    };
+  }, []);
+
   const query = searchQuery.trim().toLowerCase();
 
+  // 1. Filter Individual Tests
   const filteredTests = SINGLE_TESTS.filter((test) => {
     const matchesSearch =
       !query ||
@@ -268,6 +296,7 @@ export default function TestDirectory({
     return matchesSearch && matchesCategory;
   });
 
+  // 2. Filter Ultrasound Scans
   const filteredScans = ULTRASOUND_SCANS.filter((scan) => {
     const matchesGender =
       scanFilter === "ALL" ||
@@ -282,6 +311,7 @@ export default function TestDirectory({
     return matchesGender && matchesSearch;
   });
 
+  // 3. Filter Packages
   const filteredPackages = PACKAGES[packageGender].filter((pkg) => {
     if (!query) return true;
     return (
@@ -297,6 +327,7 @@ export default function TestDirectory({
       <div className="flex justify-center mb-8">
         <div className="inline-flex p-1.5 rounded-2xl bg-sullimax-surface border border-sullimax-border shadow-xs">
           <button
+            type="button"
             onClick={() => setActiveTab("tests")}
             className={`px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
               activeTab === "tests"
@@ -307,6 +338,7 @@ export default function TestDirectory({
             🧪 Individual Lab Tests ({filteredTests.length})
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab("packages")}
             className={`px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
               activeTab === "packages"
@@ -317,6 +349,7 @@ export default function TestDirectory({
             🩺 Health Packages ({filteredPackages.length})
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab("ultrasound")}
             className={`px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
               activeTab === "ultrasound"
@@ -391,7 +424,8 @@ export default function TestDirectory({
                       </div>
 
                       <button
-                        onClick={() => onToggleItem(test.id)}
+                        type="button"
+                        onClick={() => onToggleItem(test.id, test.name)}
                         className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
                           isSelected
                             ? "bg-emerald-100 text-sullimax-emerald border border-emerald-300"
@@ -426,6 +460,7 @@ export default function TestDirectory({
             </span>
             <div className="inline-flex rounded-lg bg-white border border-sullimax-border p-1">
               <button
+                type="button"
                 onClick={() => setPackageGender("female")}
                 className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all ${
                   packageGender === "female"
@@ -436,6 +471,7 @@ export default function TestDirectory({
                 👩 Female Profile
               </button>
               <button
+                type="button"
                 onClick={() => setPackageGender("male")}
                 className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all ${
                   packageGender === "male"
@@ -511,7 +547,8 @@ export default function TestDirectory({
                       </div>
 
                       <button
-                        onClick={() => onToggleItem(pkg.id)}
+                        type="button"
+                        onClick={() => onToggleItem(pkg.id, pkg.name)}
                         className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
                           isSelected
                             ? "bg-emerald-100 text-sullimax-emerald border border-emerald-300"
@@ -536,6 +573,7 @@ export default function TestDirectory({
             {(["ALL", "FEMALE", "MALE"] as const).map((gender) => (
               <button
                 key={gender}
+                type="button"
                 onClick={() => setScanFilter(gender)}
                 className={`px-3 py-1.5 rounded-lg border font-medium transition-colors ${
                   scanFilter === gender
@@ -606,7 +644,8 @@ export default function TestDirectory({
                       </div>
 
                       <button
-                        onClick={() => onToggleItem(scan.id)}
+                        type="button"
+                        onClick={() => onToggleItem(scan.id, scan.name)}
                         className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
                           isSelected
                             ? "bg-emerald-100 text-sullimax-emerald border border-emerald-300"
@@ -649,8 +688,8 @@ export default function TestDirectory({
             </div>
 
             <button
+              type="button"
               onClick={() => {
-                // Collect selected items across tests, scans, and packages
                 const allFlatItems: TestItem[] = [
                   ...SINGLE_TESTS,
                   ...ULTRASOUND_SCANS,

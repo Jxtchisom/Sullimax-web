@@ -8,10 +8,10 @@ import {
   MapPin, 
   Home, 
   CheckCircle2, 
-  ShieldCheck, 
-  AlertCircle,
-  Trash2
+  Trash2,
+  AlertCircle
 } from "lucide-react";
+import { validateNigerianPhone, formatToWhatsAppNumber } from "@/lib/validators";
 
 export interface BookingItem {
   id: string;
@@ -37,16 +37,17 @@ export default function BookingModal({
   const [visitType, setVisitType] = useState<"WALK_IN" | "HOME_SAMPLE">(initialVisitType);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [preferredDate, setPreferredDate] = useState("");
   const [preferredTime, setPreferredTime] = useState("07:30 AM - 09:30 AM (Fasting Priority)");
   const [address, setAddress] = useState("");
   const [isBooked, setIsBooked] = useState(false);
 
-  // Sync state whenever the modal is opened or the trigger changes
   useEffect(() => {
     if (isOpen) {
       setVisitType(initialVisitType);
       setIsBooked(false);
+      setPhoneError("");
     }
   }, [isOpen, initialVisitType]);
 
@@ -65,6 +66,14 @@ export default function BookingModal({
 
   const handleBookingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 1. Strict Nigerian Phone Validation
+    if (!validateNigerianPhone(phone)) {
+      setPhoneError("Please enter a valid Nigerian phone number (e.g. 08012345678 or +234...)");
+      return;
+    }
+
+    setPhoneError("");
     setIsBooked(true);
   };
 
@@ -125,10 +134,10 @@ export default function BookingModal({
                 <p className="font-semibold text-sullimax-navy">Next Steps:</p>
                 <p className="text-sullimax-muted">
                   {visitType === "HOME_SAMPLE"
-                    ? `• A phlebotomist will arrive at ${address || "your address"} during your window.`
-                    : "• Arrive at 6 Olumo St, off Commercial Ave, Yaba for fast check-in."}
+                    ? `• A phlebotomist will arrive at ${address || "your designated address"} during your morning slot.`
+                    : "• Arrive at 6 Olumo St, off Commercial Ave, Yaba for fast-track processing."}
                 </p>
-                <p className="text-sullimax-muted">• Keep 8–10 hours fasting if your panel includes glucose or lipids.</p>
+                <p className="text-sullimax-muted">• Fast for 8–10 hours overnight if your investigations include sugar or lipids.</p>
               </div>
 
               <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
@@ -150,7 +159,7 @@ export default function BookingModal({
             </div>
           ) : (
             <form onSubmit={handleBookingSubmit} className="space-y-6">
-              {/* 1. Visit Type Toggle */}
+              {/* Visit Type Toggle */}
               <div>
                 <label className="block text-xs font-bold text-sullimax-navy mb-2">
                   Select Visit Preference
@@ -190,7 +199,7 @@ export default function BookingModal({
                 </div>
               </div>
 
-              {/* 2. Selected Tests Breakdown */}
+              {/* Selected Tests Breakdown */}
               <div className="bg-sullimax-surface rounded-xl p-4 border border-sullimax-border">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold text-sullimax-navy uppercase tracking-wider">
@@ -200,7 +209,7 @@ export default function BookingModal({
 
                 {selectedItems.length === 0 ? (
                   <p className="text-xs text-sullimax-muted italic">
-                    No tests selected. You are booking a clinical consultation / walk-in evaluation.
+                    No tests selected. You are booking a walk-in evaluation.
                   </p>
                 ) : (
                   <div className="divide-y divide-sullimax-border/60 max-h-36 overflow-y-auto pr-1">
@@ -242,7 +251,7 @@ export default function BookingModal({
                 </div>
               </div>
 
-              {/* 3. Patient Info */}
+              {/* Patient Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-sullimax-navy mb-1">
@@ -266,14 +275,27 @@ export default function BookingModal({
                     type="tel"
                     required
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="08012345678"
-                    className="w-full bg-sullimax-surface border border-sullimax-border rounded-lg px-3 py-2 text-xs text-sullimax-navy placeholder-gray-400 focus:outline-none focus:border-sullimax-emerald"
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      if (phoneError) setPhoneError("");
+                    }}
+                    placeholder="e.g. 08012345678"
+                    className={`w-full bg-sullimax-surface border rounded-lg px-3 py-2 text-xs text-sullimax-navy placeholder-gray-400 focus:outline-none ${
+                      phoneError
+                        ? "border-red-500 ring-1 ring-red-500"
+                        : "border-sullimax-border focus:border-sullimax-emerald"
+                    }`}
                   />
+                  {phoneError && (
+                    <p className="mt-1 flex items-center gap-1 text-[11px] text-red-600 font-medium">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      <span>{phoneError}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Home Address Field (conditional) */}
+              {/* Home Address Field */}
               {visitType === "HOME_SAMPLE" && (
                 <div>
                   <label className="block text-xs font-bold text-sullimax-navy mb-1">
@@ -290,7 +312,7 @@ export default function BookingModal({
                 </div>
               )}
 
-              {/* 4. Date & Time Selection */}
+              {/* Date & Time Selection */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-sullimax-navy mb-1 flex items-center gap-1.5">

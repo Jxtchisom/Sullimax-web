@@ -6,6 +6,7 @@ import HomePhlebotomyBanner from "@/components/home/HomePhlebotomyBanner";
 import TestDirectory from "@/components/catalog/TestDirectory";
 import PrescriptionCard from "@/components/prescription/PrescriptionCard";
 import BookingModal, { BookingItem } from "@/components/booking/BookingModal";
+import Toast from "@/components/ui/Toast";
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -14,6 +15,10 @@ export default function HomePage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [bookingItems, setBookingItems] = useState<BookingItem[]>([]);
   const [initialVisitType, setInitialVisitType] = useState<"WALK_IN" | "HOME_SAMPLE">("WALK_IN");
+
+  // Toast state
+  const [toastMessage, setToastMessage] = useState("");
+  const [isToastVisible, setIsToastVisible] = useState(false);
 
   useEffect(() => {
     const handleOpenBooking = () => {
@@ -24,10 +29,17 @@ export default function HomePage() {
     return () => window.removeEventListener("open-booking-modal", handleOpenBooking);
   }, []);
 
-  const handleToggleItem = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+  const handleToggleItem = (id: string, name: string) => {
+    setSelectedIds((prev) => {
+      const isSelected = prev.includes(id);
+      if (!isSelected) {
+        setToastMessage(`Added "${name}" to appointment`);
+        setIsToastVisible(true);
+        return [...prev, id];
+      } else {
+        return prev.filter((item) => item !== id);
+      }
+    });
   };
 
   const handleProceed = (items: BookingItem[]) => {
@@ -48,6 +60,13 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-sullimax-canvas pb-24">
+      {/* Dynamic Slide-in Toast */}
+      <Toast
+        message={toastMessage}
+        isVisible={isToastVisible}
+        onClose={() => setIsToastVisible(false)}
+      />
+
       {/* 1. Hero & Search */}
       <HeroSearch
         onSearch={(query) => setSearchQuery(query)}
@@ -55,7 +74,7 @@ export default function HomePage() {
         onSelectCategory={(cat) => setActiveCategory(cat)}
       />
 
-      {/* 2. Prominent Home Phlebotomy Banner */}
+      {/* 2. Home Phlebotomy Banner */}
       <HomePhlebotomyBanner onBookHomeVisit={handleBookHomeVisit} />
 
       {/* 3. Catalog Directory */}

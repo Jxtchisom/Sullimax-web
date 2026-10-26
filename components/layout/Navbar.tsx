@@ -20,9 +20,22 @@ export default function Navbar() {
     setMobileMenuOpen(false);
   };
 
+  const handleTabNavigate = (tab: "tests" | "packages" | "ultrasound") => {
+    // 1. Dispatch tab switch event
+    window.dispatchEvent(new CustomEvent("switch-directory-tab", { detail: tab }));
+
+    // 2. Smoothly scroll down to the directory section without altering the URL hash
+    const section = document.getElementById("tests");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
+
+    setMobileMenuOpen(false);
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-sullimax-border shadow-xs">
-      {/* 1. Top Clinical Info Bar (Hidden on small mobile screens) */}
+      {/* 1. Top Clinical Info Bar */}
       <div className="bg-sullimax-surface border-b border-sullimax-border/60 text-[11px] text-sullimax-muted py-1.5 px-4 hidden sm:block">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -80,18 +93,20 @@ export default function Navbar() {
 
         {/* Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-sullimax-muted">
-          <Link
-            href="#tests"
+          <button
+            type="button"
+            onClick={() => handleTabNavigate("tests")}
             className="hover:text-sullimax-navy transition-colors"
           >
             Tests & Scans
-          </Link>
-          <Link
-            href="#tests"
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTabNavigate("packages")}
             className="hover:text-sullimax-navy transition-colors"
           >
             Health Packages
-          </Link>
+          </button>
           <Link
             href="#prescription"
             className="hover:text-sullimax-navy transition-colors"
@@ -108,8 +123,8 @@ export default function Navbar() {
 
         {/* Action Buttons & Hamburger Toggle */}
         <div className="flex items-center gap-2">
-          {/* Desktop "Book Appointment" CTA */}
           <button
+            type="button"
             onClick={openBookingModal}
             className="hidden sm:inline-flex items-center gap-1.5 bg-sullimax-emerald hover:bg-sullimax-emeraldHover text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition-colors"
           >
@@ -117,8 +132,8 @@ export default function Navbar() {
             <span>Book Appointment</span>
           </button>
 
-          {/* Mobile Hamburger Button */}
           <button
+            type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden p-2 rounded-lg text-sullimax-navy hover:bg-sullimax-surface transition-colors"
             aria-label="Toggle Menu"
@@ -136,22 +151,22 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-sullimax-border px-4 py-5 space-y-4 animate-in slide-in-from-top-2 duration-150">
           <nav className="flex flex-col space-y-3 text-sm font-semibold text-sullimax-navy">
-            <Link
-              href="#tests"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-1 border-b border-gray-100 flex items-center justify-between"
+            <button
+              type="button"
+              onClick={() => handleTabNavigate("tests")}
+              className="w-full text-left py-1 border-b border-gray-100 flex items-center justify-between"
             >
               <span>Tests & Scans</span>
               <span className="text-xs text-sullimax-muted">🧪</span>
-            </Link>
-            <Link
-              href="#tests"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-1 border-b border-gray-100 flex items-center justify-between"
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabNavigate("packages")}
+              className="w-full text-left py-1 border-b border-gray-100 flex items-center justify-between"
             >
               <span>Health Packages</span>
               <span className="text-xs text-sullimax-muted">🩺</span>
-            </Link>
+            </button>
             <Link
               href="#prescription"
               onClick={() => setMobileMenuOpen(false)}
@@ -172,6 +187,7 @@ export default function Navbar() {
 
           <div className="pt-2 border-t border-sullimax-border space-y-2">
             <button
+              type="button"
               onClick={openBookingModal}
               className="w-full bg-sullimax-emerald hover:bg-sullimax-emeraldHover text-white text-xs font-bold py-3 rounded-xl transition-colors shadow-xs flex items-center justify-center gap-2"
             >
